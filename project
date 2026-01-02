@@ -1,0 +1,224 @@
+namespace TicTacToe
+{
+    internal class Program
+    {
+        static void Main(string[] args)
+        {
+            GameBoard board = new GameBoard();
+            HumanPlayer human = new HumanPlayer();
+            AIPlayer ai = new AIPlayer();
+            var gameActive = true;
+
+            while (gameActive)
+            {
+                Console.Clear();
+                board.Display();
+                human.MakeMove(board);
+
+                if (board.CheckWin('X'))
+                {
+                    board.Display();
+                    Console.WriteLine("Победа человека");
+                    Thread.Sleep(2000);
+                    gameActive = false;
+                }
+                else if (board.IsBoardFull())
+                {
+                    board.Display();
+                    Console.WriteLine("Ничья!");
+                    Thread.Sleep(2000);
+                    gameActive = false;
+                }
+
+                if (gameActive)
+                {
+                    board.Display();
+                    ai.MakeMove(board);
+
+                    if (board.CheckWin('O'))
+                    {
+                        board.Display();
+                        Console.WriteLine("Победа ИИ!");
+                        Thread.Sleep(2000);
+                        gameActive = false;
+                    }
+                    else if (board.IsBoardFull())
+                    {
+                        board.Display();
+                        Console.WriteLine("Ничья");
+                        Thread.Sleep(2000);
+                        gameActive = false;
+                    }
+                }
+            }
+
+            Console.WriteLine("Нажмите любую клавишу для выхода...");
+            Console.ReadKey();
+        }
+    }
+
+    public class GameBoard
+    {
+        private char[,] _board =
+        {
+            { '1', '2', '3' },
+            { '4', '5', '6' },
+            { '7', '8', '9' }
+        };
+
+        public void Display()
+        {
+            for (var row = 0; row < _board.GetLength(0); row++)
+            {
+                for (var col = 0; col < _board.GetLength(1); col++)
+                {
+                    Console.Write(_board[row, col] +  " ");
+                }
+                Console.WriteLine();
+            }
+        }
+
+        public bool IsCellFree(int position)
+        {
+            var row = (position - 1) / 3;
+            var col = (position - 1) % 3;
+            if (char.IsDigit(_board[row, col]))
+            {
+                return true;
+            }
+
+            return false;
+        }
+
+        public bool PlaceSymbol(int position, char symbol)
+        {
+            
+            if (position < 1 || position > 9)
+            {
+                return false;
+            }
+            
+            if (!IsCellFree(position))
+            {
+                return false;
+            }
+            
+            var userX = (position - 1) / 3;
+            var userY = (position - 1) % 3;
+                    
+            _board[userX, userY] = symbol;
+            return true;
+
+        }
+
+        public bool CheckWin(char symbol)
+        {
+            return
+                (_board[0, 0] == symbol && _board[0, 1] == symbol && _board[0, 2] == symbol) ||
+                (_board[1, 0] == symbol && _board[1, 1] == symbol && _board[1, 2] == symbol) ||
+                (_board[2, 0] == symbol && _board[2, 1] == symbol && _board[2, 2] == symbol) ||
+
+                (_board[0, 0] == symbol && _board[1, 0] == symbol && _board[2, 0] == symbol) ||
+                (_board[0, 1] == symbol && _board[1, 1] == symbol && _board[2, 1] == symbol) ||
+                (_board[0, 2] == symbol && _board[1, 2] == symbol && _board[2, 2] == symbol) ||
+
+                (_board[0, 0] == symbol && _board[1, 1] == symbol && _board[2, 2] == symbol) ||
+                (_board[0, 2] == symbol && _board[1, 1] == symbol && _board[2, 0] == symbol);
+
+        }
+
+        public bool IsBoardFull()
+        {
+
+            for (var row = 0; row < 3; row++)
+            {
+                for (var col = 0; col < 3; col++)
+                {
+                    var position = (row * 3) + col + 1;
+                    
+                    if (IsCellFree(position))
+                    {
+                        return false;
+                    }
+                }
+            }
+            
+            return true;
+        }
+    }
+
+    public abstract class Player
+    {
+        
+        public abstract int MakeMove(GameBoard board);
+        
+    }
+
+    public class HumanPlayer : Player
+    {
+        public override int MakeMove(GameBoard board)
+        {
+            int position;
+            bool isValidInput;
+
+            do
+            {
+                Console.WriteLine("Ваш ход (1-9)");
+                var userInput = Console.ReadLine();
+
+                isValidInput = int.TryParse(userInput, out position);
+
+                if (!isValidInput)
+                {
+                    Console.WriteLine("Ошибка! Введите число от 1 до 9");
+                    continue;
+                }
+
+                if (position < 1 || position > 9)
+                {
+                    Console.WriteLine("Ошибка! Число должно быть от 1 до 9");
+                    isValidInput = false;
+                    continue;
+                }
+
+                if (!board.IsCellFree(position))
+                {
+                    Console.WriteLine("Ошибка! Клетка уже занята");
+                    isValidInput = false;
+                }
+
+            } while (!isValidInput);
+
+            board.PlaceSymbol(position, 'X');
+            return position;
+        }
+    }
+
+    public class AIPlayer : Player
+    {
+        private Random _random;
+
+        public AIPlayer()
+        {
+            _random = new Random();
+        }
+        public override int MakeMove(GameBoard board)
+        {
+            if (board.IsBoardFull())
+            {
+                return -1;
+            }
+
+            int position;
+
+            do
+            {
+                position = _random.Next(1, 10);
+            } while (!board.IsCellFree(position));
+            
+            board.PlaceSymbol(position, 'O');
+            Thread.Sleep(500);
+            return position;
+        }
+    }
+}
